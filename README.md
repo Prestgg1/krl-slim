@@ -1,50 +1,52 @@
 # KRL Lab
 
-Pulsuz, açıq mənbəli **KRL (KUKA Robot Language) öyrənmə simulyatoru**. Brauzerdə KRL kodu yazın və ümumi (generic) 6 oxlu sənaye robotunun onu 3D-də icra etməsinə baxın. Quraşdırma tələb etmir.
+A free, open-source **KRL (KUKA Robot Language) learning simulator**. Write KRL code in the browser and watch a generic 6-axis industrial robot run it in 3D. Nothing to install.
 
-> Bu layihə KUKA AG ilə əlaqəli deyil. "KUKA" və "KRL" öz sahiblərinin ticarət nişanlarıdır. Robot modeli ümumidir, heç bir KUKA məhsulunun dəqiq modeli deyil.
+**Live:** https://prestgg1.github.io/krl-slim/
 
-## İmkanlar (Faza 1)
+> This project is not affiliated with KUKA AG. "KUKA" and "KRL" are trademarks of their respective owners. The robot model is generic and does not reproduce any KUKA product.
 
-- **Hərəkət:** `PTP`, `LIN`, `CIRC` (+ `_REL`, `CA`), `SPTP/SLIN/SCIRC` sintaksisi
-- **Proqramlaşdırma:** `DEF/END`, `DEFFCT/ENDFCT`, `DEFDAT`, `DECL` (`INT REAL BOOL CHAR E6POS POS FRAME E6AXIS AXIS`, massivlər), `IF/ELSE`, `FOR/STEP`, `WHILE`, `REPEAT/UNTIL`, `LOOP/EXIT`, `SWITCH/CASE`, `WAIT SEC`, `WAIT FOR`, `HALT`, `:IN/:OUT` parametrləri
-- **Sistem dəyişənləri:** `$IN $OUT $VEL $VEL_AXIS $ACC $OV_PRO $TOOL $BASE $POS_ACT $AXIS_ACT $TIMER $NULLFRAME`, `HOME`, `TOOL_DATA[] BASE_DATA[]`
-- **Funksiyalar:** `BAS(#INITMOV|#PTP_PARAMS|#CP_PARAMS|#TOOL|#BASE)`, `PULSE`, `MsgNotify`, `SIN COS TAN ASIN ACOS ATAN2 SQRT ABS`, həndəsi operator `:`
-- KRL-ə sadiq qaydalar: INT bölməsi, operator prioriteti (`(a > 1) AND (b < 2)`), DECL proqramın əvvəlində, işə salınmamış dəyişən xətası
-- Azərbaycan dilində izahlı xəta mesajları (sətir nömrəsi + məsləhət)
-- 3D: oxların hədləri, sinqulyarlıq və əlçatmazlıq aşkarlanması, TCP yolunun çəkilməsi, tutucu və götür-qoy hissələri
-- Addım-addım icra, OV (override), dəyişənlərə baxış, I/O paneli, Jog və Teach
-- 8 dərs + sərbəst rejim
+## Features (phase 1)
 
-## İşə salmaq
+- **Motion:** `PTP`, `LIN`, `CIRC` (+ `_REL`, `CA`), `SPTP/SLIN/SCIRC` syntax
+- **Language:** `DEF/END`, `DEFFCT/ENDFCT`, `DEFDAT`, `DECL` (`INT REAL BOOL CHAR E6POS POS FRAME E6AXIS AXIS`, arrays), `IF/ELSE`, `FOR/STEP`, `WHILE`, `REPEAT/UNTIL`, `LOOP/EXIT`, `SWITCH/CASE`, `WAIT SEC`, `WAIT FOR`, `HALT`, `:IN/:OUT` parameters
+- **System variables:** `$IN $OUT $VEL $VEL_AXIS $ACC $OV_PRO $TOOL $BASE $POS_ACT $AXIS_ACT $TIMER $NULLFRAME`, `HOME`, `TOOL_DATA[] BASE_DATA[]`
+- **Functions:** `BAS(#INITMOV|#PTP_PARAMS|#CP_PARAMS|#TOOL|#BASE)`, `PULSE`, `MsgNotify`, `SIN COS TAN ASIN ACOS ATAN2 SQRT ABS`, geometric operator `:`
+- Faithful KRL rules: integer division, operator priority (`(a > 1) AND (b < 2)`), DECL at the top of a routine, error on uninitialized variables
+- Clear error messages with line number and a hint
+- 3D: axis limits, singularity and reachability checks, TCP path trace, gripper and pick-and-place parts
+- Step-by-step execution, override (OV), variable watch, I/O panel, jog and teach
+- 8 lessons + free mode
+
+## Running locally
 
 ```bash
-npm run build      # app.html -> index.html
-python3 -m http.server 8080   # sonra http://localhost:8080
-npm test           # kinematika, interpretator və dərs testləri
+npm run build                 # app.html -> index.html
+python3 -m http.server 8080   # then open http://localhost:8080
+npm test                      # kinematics, interpreter and lesson tests
 ```
 
-GitHub Pages: repo parametrlərində Pages-i `main` budağının kök qovluğuna yönəldin.
+GitHub Pages: in the repo settings, point Pages at the root of the `main` branch.
 
-## Struktur
+## Structure
 
-| Fayl | Nə edir |
+| File | What it does |
 |---|---|
-| `src/krl/lexer.js`, `parser.js` | KRL mətnini AST-yə çevirir |
-| `src/krl/interpreter.js` | AST-ni generator kimi icra edir (hərəkət, WAIT, sətir hadisələri) |
-| `src/kinematics.js` | Ümumi 6 oxlu robot: FK və analitik IK |
-| `src/motion.js` | PTP/LIN/CIRC trayektoriyaları, sürət profili |
-| `src/runner.js` | İnterpretatoru kadr-kadr idarə edir |
-| `src/scene.js` | Three.js səhnəsi |
-| `src/editor.js`, `src/main.js`, `app.html` | İnterfeys |
-| `src/lessons.js` | Dərslər |
+| `src/krl/lexer.js`, `parser.js` | Turn KRL text into an AST |
+| `src/krl/interpreter.js` | Runs the AST as a generator (motion, WAIT and line events) |
+| `src/kinematics.js` | Generic 6-axis robot: forward and analytic inverse kinematics |
+| `src/motion.js` | PTP/LIN/CIRC trajectories and speed profile |
+| `src/runner.js` | Drives the interpreter frame by frame |
+| `src/scene.js` | Three.js scene |
+| `src/editor.js`, `src/main.js`, `app.html` | User interface |
+| `src/lessons.js` | Lessons |
 
-## Yol xəritəsi
+## Roadmap
 
-- **Faza 1 (bu):** veb öyrənmə simulyatoru
-- Faza 1.x: yaxınlaşdırma (`C_DIS`, `C_PTP`) hamarlanması, `INTERRUPT`, `TRIGGER`, `STRUC/ENUM`, `.src/.dat` fayl idxalı/ixracı, ingilis dili
-- **Faza 2:** açıq mənbəli desktop proqram (real KRL layihələri, KUKA robotuna qoşulma, məs. KukavarProxy vasitəsilə)
+- **Phase 1 (this):** web learning simulator
+- Phase 1.x: approximate positioning (`C_DIS`, `C_PTP`) blending, `INTERRUPT`, `TRIGGER`, `STRUC/ENUM`, `.src/.dat` import/export, more languages
+- **Phase 2:** open-source desktop app (real KRL projects, connection to a KUKA controller, e.g. via KukavarProxy)
 
-## Lisenziya
+## License
 
 MIT

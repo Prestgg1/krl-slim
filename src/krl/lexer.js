@@ -54,7 +54,7 @@ export function tokenize(src) {
     }
     if (ch === "'") { // 'B0101' or 'H1F' or a char literal
       const j = src.indexOf("'", i + 1);
-      if (j < 0 || src.slice(i, j).includes('\n')) throw new KrlError("Bağlanmamış ' simvolu", line);
+      if (j < 0 || src.slice(i, j).includes('\n')) throw new KrlError("Unclosed ' quote", line);
       const body = src.slice(i + 1, j);
       if (/^[Bb][01]+$/.test(body)) push('NUM', parseInt(body.slice(1), 2), { isInt: true });
       else if (/^[Hh][0-9A-Fa-f]+$/.test(body)) push('NUM', parseInt(body.slice(1), 16), { isInt: true });
@@ -64,7 +64,7 @@ export function tokenize(src) {
     }
     if (ch === '"') {
       const j = src.indexOf('"', i + 1);
-      if (j < 0 || src.slice(i, j).includes('\n')) throw new KrlError('Bağlanmamış " simvolu (mətn)', line);
+      if (j < 0 || src.slice(i, j).includes('\n')) throw new KrlError('Unclosed " quote (string)', line);
       push('STR', src.slice(i + 1, j));
       col += j - i + 1; i = j + 1;
       continue;
@@ -83,7 +83,7 @@ export function tokenize(src) {
     const two = src.slice(i, i + 2);
     if (['==', '<>', '<=', '>='].includes(two)) { push('OP', two); i += 2; col += 2; continue; }
     if ('=<>+-*/:,()[]{}.%'.includes(ch)) { push('OP', ch); i++; col++; continue; }
-    throw new KrlError(`Tanınmayan simvol: '${ch}'`, line);
+    throw new KrlError(`Unknown character: '${ch}'`, line);
   }
   push('NL', '\n');
   push('EOF', null);

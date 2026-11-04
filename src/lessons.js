@@ -1,19 +1,19 @@
-// Lessons (Azerbaijani). Each lesson: short theory, an exercise, and a starting program.
+// Lessons. Each lesson: short theory, an exercise, and a starting program.
 export const LESSONS = [
   {
     id: 'ptp-axes',
-    title: '1. Oxlar və PTP',
+    title: '1. Axes and PTP',
     text: `
-<p>Robotun 6 oxu var: <b>A1</b> (gövdənin fırlanması), <b>A2</b> (çiyin), <b>A3</b> (dirsək), <b>A4</b>, <b>A5</b>, <b>A6</b> (bilək).</p>
-<p><code>PTP</code> (point-to-point) əmri robotu ən sürətli yolla aparır: bütün oxlar eyni anda başlayır və eyni anda dayanır. Alətin yolu düz xətt <i>deyil</i> (boz qırıq xətt).</p>
-<p><code>HOME</code> hazır nöqtədir: <code>{A1 0, A2 -90, A3 90, A4 0, A5 0, A6 0}</code>. Aqreqatda yazılmayan oxlar yerində qalır.</p>
-<p class="task"><b>Tapşırıq:</b> A6 oxunu 180° fırladan bir sətir əlavə edin. Sonra A2 üçün -200 yazıb nə baş verdiyinə baxın.</p>`,
-    code: `DEF dars1()
-  ; PTP: oxlar fəzasında hərəkət
+<p>The robot has 6 axes: <b>A1</b> (base rotation), <b>A2</b> (shoulder), <b>A3</b> (elbow), <b>A4</b>, <b>A5</b>, <b>A6</b> (wrist).</p>
+<p><code>PTP</code> (point-to-point) moves the robot the fastest way: all axes start together and stop together. The tool path is <i>not</i> a straight line (grey dashed line).</p>
+<p><code>HOME</code> is a predefined point: <code>{A1 0, A2 -90, A3 90, A4 0, A5 0, A6 0}</code>. Axes you leave out of an aggregate stay where they are.</p>
+<p class="task"><b>Exercise:</b> add a line that turns A6 by 180°. Then try -200 for A2 and see what happens.</p>`,
+    code: `DEF lesson1()
+  ; PTP: motion in axis space
   PTP HOME
-  PTP {A1 45}             ; yalnız A1 dönür
-  PTP {A2 -60, A3 60}     ; çiyin və dirsək
-  PTP {A5 60}             ; bilək əyilir
+  PTP {A1 45}             ; only A1 turns
+  PTP {A2 -60, A3 60}     ; shoulder and elbow
+  PTP {A5 60}             ; wrist bends
   PTP {A1 -45, A4 90, A6 -90}
   PTP HOME
 END
@@ -21,21 +21,21 @@ END
   },
   {
     id: 'cartesian',
-    title: '2. Kartezian nöqtələr',
+    title: '2. Cartesian points',
     text: `
-<p>Nöqtəni oxlarla yox, fəzada da vermək olar: <code>X, Y, Z</code> (mm) və oriyentasiya <code>A, B, C</code> (dərəcə). <b>A</b> Z ətrafında, <b>B</b> Y ətrafında, <b>C</b> X ətrafında fırlanmadır.</p>
-<p><code>B 90</code> alətin aşağı baxması deməkdir. Nöqtələri <code>DECL E6POS</code> ilə elan edib saxlayırıq. Bir komponenti ayrıca dəyişmək olar: <code>P2.Z = 450</code>.</p>
-<p>Robot nöqtəyə çata bilmirsə, simulyator xəta göstərir. Çatma radiusu təxminən 950 mm-dir.</p>
-<p class="task"><b>Tapşırıq:</b> P3 nöqtəsini yaradın (X 450, Y 0, Z 800) və robotu ora göndərin. Sonra X-i 1500 edin və xəta mesajını oxuyun.</p>`,
-    code: `DEF dars2()
+<p>A point can also be given in space instead of in axes: <code>X, Y, Z</code> (mm) and the orientation <code>A, B, C</code> (degrees). <b>A</b> rotates about Z, <b>B</b> about Y, <b>C</b> about X.</p>
+<p><code>B 90</code> means the tool points down. Points are stored in variables declared with <code>DECL E6POS</code>. You can change a single component: <code>P2.Z = 450</code>.</p>
+<p>If the robot cannot reach a point, the simulator shows an error. The reach is about 950 mm.</p>
+<p class="task"><b>Exercise:</b> create a point P3 (X 450, Y 0, Z 800) and send the robot there. Then set X to 1500 and read the error message.</p>`,
+    code: `DEF lesson2()
   DECL E6POS P1, P2
   PTP HOME
-  ; Alət aşağı baxır: A 0, B 90, C 0
+  ; Tool points down: A 0, B 90, C 0
   P1 = {X 600, Y -250, Z 600, A 0, B 90, C 0}
   P2 = {X 600, Y 250, Z 600, A 0, B 90, C 0}
   PTP P1
   PTP P2
-  P2.Z = 450              ; yalnız Z dəyişir
+  P2.Z = 450              ; change only Z
   PTP P2
   PTP HOME
 END
@@ -43,47 +43,47 @@ END
   },
   {
     id: 'lin',
-    title: '3. LIN: düz xətt',
+    title: '3. LIN: straight lines',
     text: `
-<p><code>LIN</code> aləti (TCP) düz xətt üzrə aparır. Qaynaq, yapışqan çəkmə və dəqiq yaxınlaşma üçün istifadə olunur. Yol sarı rəngdə çəkilir.</p>
-<p>Sürət <code>$VEL.CP</code> ilə verilir (<b>m/s</b>). <code>LIN_REL</code> cari mövqeyə nisbətən hərəkətdir.</p>
-<p>Diqqət: LIN yalnız Kartezian nöqtə qəbul edir. <code>LIN HOME</code> yazsanız xəta alacaqsınız.</p>
-<p class="task"><b>Tapşırıq:</b> Kvadratı üçbucağa çevirin. Sonra <code>$VEL.CP</code>-ni 0.1 edib fərqi görün.</p>`,
-    code: `DEF dars3()
+<p><code>LIN</code> moves the tool centre point (TCP) along a straight line. It is used for welding, gluing and precise approaches. The path is drawn in yellow.</p>
+<p>The speed is set with <code>$VEL.CP</code> in <b>m/s</b>. <code>LIN_REL</code> moves relative to the current position.</p>
+<p>Note: LIN only accepts Cartesian points. Writing <code>LIN HOME</code> gives an error.</p>
+<p class="task"><b>Exercise:</b> turn the square into a triangle. Then set <code>$VEL.CP</code> to 0.1 and compare.</p>`,
+    code: `DEF lesson3()
   DECL E6POS P
   BAS(#INITMOV, 0)
   $VEL.CP = 0.3           ; 0.3 m/s
   PTP HOME
   P = {X 550, Y -150, Z 450, A 0, B 90, C 0}
   PTP P
-  LIN {X 550, Y 150}      ; yazılmayan komponentlər cari mövqedən götürülür
+  LIN {X 550, Y 150}      ; missing components are taken from the current position
   LIN {X 750, Y 150}
   LIN {X 750, Y -150}
   LIN P
-  LIN_REL {Z 200}         ; 200 mm yuxarı
+  LIN_REL {Z 200}         ; 200 mm up
   PTP HOME
 END
 `,
   },
   {
     id: 'circ',
-    title: '4. CIRC: dairəvi qövs',
+    title: '4. CIRC: circular arcs',
     text: `
-<p><code>CIRC köməkçi, son</code>: robot cari nöqtədən başlayıb köməkçi nöqtədən keçən qövslə son nöqtəyə gedir. Üç nöqtə bir dairəni təyin edir. Yol yaşıl rəngdə çəkilir.</p>
-<p><code>CA</code> (circular angle) ilə qövsün bucağını verə bilərsiniz: <code>CIRC AUX, END, CA 90</code>. Mənfi bucaq əks istiqamətdir.</p>
-<p>Üç nöqtə bir düz xətt üzərindədirsə, dairə qurmaq olmur və xəta alırsınız.</p>
-<p class="task"><b>Tapşırıq:</b> CA 90 əvəzinə CA 270 yazın. Sonra radiusu 100 mm olan dairə çəkin.</p>`,
-    code: `DEF dars4()
+<p><code>CIRC aux, end</code>: the robot starts at the current point and moves on an arc through the auxiliary point to the end point. Three points define one circle. The path is drawn in green.</p>
+<p>With <code>CA</code> (circular angle) you set the arc angle: <code>CIRC AUX, END, CA 90</code>. A negative angle goes the other way.</p>
+<p>If the three points lie on one straight line, no circle is possible and you get an error.</p>
+<p class="task"><b>Exercise:</b> replace CA 90 with CA 270. Then draw a circle with a 100 mm radius.</p>`,
+    code: `DEF lesson4()
   DECL E6POS START
   $VEL.CP = 0.25
   PTP HOME
   START = {X 650, Y -150, Z 450, A 0, B 90, C 0}
   PTP START
-  ; tam dairə = iki yarımdairə
+  ; full circle = two half circles
   CIRC {X 800, Y 0, Z 450}, {X 650, Y 150, Z 450}
   CIRC {X 500, Y 0, Z 450}, START
   LIN_REL {Z 100}
-  ; eyni dairənin yalnız 90 dərəcəsi
+  ; only 90 degrees of the same circle
   CIRC {X 800, Y 0, Z 550}, {X 650, Y 150, Z 550}, CA 90
   PTP HOME
 END
@@ -91,13 +91,13 @@ END
   },
   {
     id: 'loops',
-    title: '5. Dəyişənlər və dövrlər',
+    title: '5. Variables and loops',
     text: `
-<p>KRL-də hər dəyişən istifadədən əvvəl, proqramın əvvəlində elan olunur: <code>DECL INT i</code>, <code>DECL REAL a</code>, <code>DECL BOOL ok</code>.</p>
-<p>Dövrlər: <code>FOR i = 1 TO 4 ... ENDFOR</code>, <code>WHILE şərt ... ENDWHILE</code>, <code>REPEAT ... UNTIL şərt</code>, <code>LOOP ... ENDLOOP</code> (<code>EXIT</code> ilə çıxılır).</p>
-<p>Diqqət: INT bölməsi tam ədəd verir: <code>7 / 2 = 3</code>. Sağ paneldə "Dəyişənlər" bölməsindən dəyərləri izləyin. Addım-addım (⏭) icra edin.</p>
-<p class="task"><b>Tapşırıq:</b> FOR əvəzinə WHILE ilə eyni proqramı yazın. Sonra STEP 2 istifadə edin.</p>`,
-    code: `DEF dars5()
+<p>In KRL every variable is declared before use, at the top of the routine: <code>DECL INT i</code>, <code>DECL REAL a</code>, <code>DECL BOOL ok</code>.</p>
+<p>Loops: <code>FOR i = 1 TO 4 ... ENDFOR</code>, <code>WHILE condition ... ENDWHILE</code>, <code>REPEAT ... UNTIL condition</code>, <code>LOOP ... ENDLOOP</code> (leave it with <code>EXIT</code>).</p>
+<p>Note: INT division gives an integer: <code>7 / 2 = 3</code>. Watch the values in the "Variables" tab and run the program step by step (⏭).</p>
+<p class="task"><b>Exercise:</b> write the same program with WHILE instead of FOR. Then try STEP 2.</p>`,
+    code: `DEF lesson5()
   DECL INT i
   DECL REAL a
   DECL E6POS P
@@ -106,8 +106,8 @@ END
   P = {X 600, Y 0, Z 360, A 0, B 90, C 0}
   PTP P
   FOR i = 1 TO 4
-    a = 30 * i            ; kvadratın yarım tərəfi
-    P.Z = 300 + 60 * i    ; hər dəfə yuxarı
+    a = 30 * i            ; half the side of the square
+    P.Z = 300 + 60 * i    ; a bit higher each time
     P.X = 620 - a
     P.Y = -a
     LIN P
@@ -126,27 +126,27 @@ END
   },
   {
     id: 'io',
-    title: '6. Şərtlər, giriş və çıxışlar',
+    title: '6. Conditions, inputs and outputs',
     text: `
-<p>Robot sensorlardan siqnal alır (<code>$IN[n]</code>) və cihazları idarə edir (<code>$OUT[n]</code>). Simulyatorda girişləri sağdakı <b>I/O</b> panelindən yandırırsınız.</p>
-<p><code>WAIT FOR $IN[1]</code> siqnal gələnə qədər gözləyir. <code>WAIT SEC 0.5</code> vaxt gözləməsidir.</p>
-<p><b>Vacib KRL qaydası:</b> müqayisələr AND/OR-dan zəif bağlanır, ona görə mötərizə yazın: <code>IF (say &gt; 2) AND $IN[2] THEN</code>.</p>
-<p class="task"><b>Tapşırıq:</b> $IN[3] yanarsa dövrdən dərhal çıxan bir IF əlavə edin.</p>`,
-    code: `DEF dars6()
-  DECL INT say
+<p>The robot reads signals from sensors (<code>$IN[n]</code>) and switches devices (<code>$OUT[n]</code>). In the simulator you switch inputs in the <b>I/O</b> tab.</p>
+<p><code>WAIT FOR $IN[1]</code> waits until the signal arrives. <code>WAIT SEC 0.5</code> waits for a time.</p>
+<p><b>Important KRL rule:</b> comparisons bind weaker than AND/OR, so use parentheses: <code>IF (count &gt; 2) AND $IN[2] THEN</code>.</p>
+<p class="task"><b>Exercise:</b> add an IF that leaves the loop immediately when $IN[3] is on.</p>`,
+    code: `DEF lesson6()
+  DECL INT count
   PTP HOME
-  say = 0
-  MsgNotify("I/O panelindən $IN[1] girişini yandırın")
+  count = 0
+  MsgNotify("Switch on input $IN[1] in the I/O tab")
   WAIT FOR $IN[1]
-  $OUT[2] = TRUE          ; lampa yanır
+  $OUT[2] = TRUE          ; lamp on
   LOOP
     IF $IN[2] THEN
       PTP {A1 -40}
     ELSE
       PTP {A1 40}
     ENDIF
-    say = say + 1
-    IF say >= 6 THEN
+    count = count + 1
+    IF count >= 6 THEN
       EXIT
     ENDIF
     WAIT SEC 0.5
@@ -158,23 +158,23 @@ END
   },
   {
     id: 'subs',
-    title: '7. Alt proqramlar və funksiyalar',
+    title: '7. Subroutines and functions',
     text: `
-<p>Təkrarlanan işi alt proqrama çıxarın: <code>DEF kvadrat(x:IN, a:IN) ... END</code>. Parametrləri alt proqramın içində <code>DECL</code> ilə elan edin.</p>
-<p>Dəyər qaytaran funksiya <code>DEFFCT REAL ad() ... ENDFCT</code> ilə yazılır və <code>RETURN</code> ilə bitir. <code>:OUT</code> parametri çağıranın dəyişənini dəyişə bilir.</p>
-<p class="task"><b>Tapşırıq:</b> <code>ucbucaq(x, a)</code> alt proqramı yazıb əsas proqramdan çağırın.</p>`,
-    code: `DEF dars7()
+<p>Move repeated work into a subroutine: <code>DEF square(x:IN, a:IN) ... END</code>. Declare the parameters with <code>DECL</code> inside the subroutine.</p>
+<p>A function that returns a value is written as <code>DEFFCT REAL name() ... ENDFCT</code> and ends with <code>RETURN</code>. An <code>:OUT</code> parameter can change the caller's variable.</p>
+<p class="task"><b>Exercise:</b> write a <code>triangle(x, a)</code> subroutine and call it from the main program.</p>`,
+    code: `DEF lesson7()
   DECL INT i
   $VEL.CP = 0.4
   PTP HOME
   FOR i = 1 TO 3
-    kvadrat(480 + i * 70, 100)
+    square(480 + i * 70, 100)
   ENDFOR
-  MsgNotify("Kvadratın sahəsi:", sahe(100.0), "mm2")
+  MsgNotify("Area of the square:", area(100.0), "mm2")
   PTP HOME
 END
 
-DEF kvadrat(x:IN, a:IN)
+DEF square(x:IN, a:IN)
   DECL REAL x, a
   DECL E6POS P
   P = {X 0, Y 0, Z 420, A 0, B 90, C 0}
@@ -191,7 +191,7 @@ DEF kvadrat(x:IN, a:IN)
   LIN P
 END
 
-DEFFCT REAL sahe(a:IN)
+DEFFCT REAL area(a:IN)
   DECL REAL a
   RETURN a * a
 ENDFCT
@@ -199,33 +199,33 @@ ENDFCT
   },
   {
     id: 'pick',
-    title: '8. Götür və qoy (tutucu)',
+    title: '8. Pick and place (gripper)',
     text: `
-<p>Real tətbiq: masadakı üç kubu sarı işarələrə daşımaq. Tutucu <code>$OUT[1]</code> ilə idarə olunur: <code>TRUE</code> bağlanır (tutur), <code>FALSE</code> açılır.</p>
-<p><code>BAS(#TOOL, 1)</code> aləti seçir: <code>TOOL_DATA[1]</code> tutucunun ucudur (flansdan 120 mm, alət istiqaməti X). Bundan sonra bütün nöqtələr tutucunun ucuna aiddir.</p>
-<p>Yaxşı təcrübə: hissəyə əvvəlcə yuxarıdan PTP ilə yaxınlaşın, sonra LIN ilə enin.</p>
-<p class="task"><b>Tapşırıq:</b> Kubları üst-üstə yığın (hər kub 50 mm hündürdür).</p>`,
-    code: `DEF dars8()
+<p>A real application: carry the three cubes on the table to the yellow marks. The gripper is controlled with <code>$OUT[1]</code>: <code>TRUE</code> closes it (grip), <code>FALSE</code> opens it.</p>
+<p><code>BAS(#TOOL, 1)</code> selects the tool: <code>TOOL_DATA[1]</code> is the gripper tip (120 mm from the flange, tool direction X). After that every point refers to the gripper tip.</p>
+<p>Good practice: approach the part from above with PTP, then go down with LIN.</p>
+<p class="task"><b>Exercise:</b> stack the cubes on top of each other (each cube is 50 mm high).</p>`,
+    code: `DEF lesson8()
   DECL INT i
-  DECL E6POS GOTUR, QOY
+  DECL E6POS PICK, PLACE
   BAS(#INITMOV, 0)
-  BAS(#TOOL, 1)           ; tutucu
+  BAS(#TOOL, 1)           ; gripper
   $VEL.CP = 0.5
-  $OUT[1] = FALSE         ; tutucu açıq
+  $OUT[1] = FALSE         ; gripper open
   PTP HOME
   FOR i = 1 TO 3
-    GOTUR = {X 600, Y 0, Z 425, A 0, B 90, C 0}
-    GOTUR.Y = -200 + (i - 1) * 200
-    QOY = GOTUR
-    QOY.X = 750
-    PTP GOTUR             ; kubun üstü
-    LIN_REL {Z -100}      ; aşağı en
-    $OUT[1] = TRUE        ; tut
+    PICK = {X 600, Y 0, Z 425, A 0, B 90, C 0}
+    PICK.Y = -200 + (i - 1) * 200
+    PLACE = PICK
+    PLACE.X = 750
+    PTP PICK              ; above the cube
+    LIN_REL {Z -100}      ; go down
+    $OUT[1] = TRUE        ; grip
     WAIT SEC 0.3
     LIN_REL {Z 100}
-    PTP QOY               ; işarənin üstü
+    PTP PLACE             ; above the mark
     LIN_REL {Z -98}
-    $OUT[1] = FALSE       ; burax
+    $OUT[1] = FALSE       ; release
     WAIT SEC 0.3
     LIN_REL {Z 98}
   ENDFOR
@@ -235,12 +235,12 @@ END
   },
   {
     id: 'free',
-    title: 'Sərbəst proqram',
+    title: 'Free program',
     text: `
-<p>Öz proqramınızı yazın. Sağdakı <b>Jog</b> panelindən robotu əl ilə hərəkət etdirib <b>Teach</b> düyməsi ilə cari nöqtəni koda əlavə edə bilərsiniz.</p>
-<p>Dəstəklənənlər: <code>PTP LIN CIRC</code> (+ <code>_REL</code>), <code>DECL</code>, <code>INT REAL BOOL CHAR E6POS POS FRAME E6AXIS AXIS</code>, <code>IF FOR WHILE REPEAT LOOP SWITCH</code>, <code>WAIT</code>, <code>$IN $OUT $VEL $VEL_AXIS $TOOL $BASE $POS_ACT $AXIS_ACT $TIMER</code>, <code>BAS PULSE MsgNotify</code>, <code>SIN COS TAN ACOS ATAN2 SQRT ABS</code>, həndəsi operator <code>:</code>.</p>`,
+<p>Write your own program. In the <b>Jog</b> tab you can move the robot by hand and use <b>Teach</b> to insert the current point into the code.</p>
+<p>Supported: <code>PTP LIN CIRC</code> (+ <code>_REL</code>), <code>DECL</code>, <code>INT REAL BOOL CHAR E6POS POS FRAME E6AXIS AXIS</code>, <code>IF FOR WHILE REPEAT LOOP SWITCH</code>, <code>WAIT</code>, <code>$IN $OUT $VEL $VEL_AXIS $TOOL $BASE $POS_ACT $AXIS_ACT $TIMER</code>, <code>BAS PULSE MsgNotify</code>, <code>SIN COS TAN ACOS ATAN2 SQRT ABS</code>, the geometric operator <code>:</code>.</p>`,
     code: `DEF main()
-  ; proqramınızı bura yazın
+  ; write your program here
   PTP HOME
 
 END

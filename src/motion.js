@@ -45,8 +45,8 @@ function checkLimits(q, what) {
   const i = limitViolation(q);
   if (i >= 0) {
     const [lo, hi] = ROBOT.limits[i];
-    throw new MotionError(`${what}: ${axisName(i)} oxu hədddən kənardır (${q[i].toFixed(1)}°, icazə: ${lo}..${hi}°)`,
-      'Nöqtəni robotun iş zonasına yaxınlaşdırın və ya başqa oriyentasiya seçin');
+    throw new MotionError(`${what}: axis ${axisName(i)} is out of range (${q[i].toFixed(1)}°, allowed ${lo}..${hi}°)`,
+      'Move the point closer to the work envelope or choose another orientation');
   }
 }
 
@@ -73,7 +73,7 @@ export function plan(ev, q0) {
   if (ev.kind === 'PTP') return planPTP(ev, q0, ov);
   if (ev.kind === 'LIN') return planLIN(ev, q0, ov);
   if (ev.kind === 'CIRC') return planCIRC(ev, q0, ov);
-  throw new MotionError(`Naməlum hərəkət: ${ev.kind}`);
+  throw new MotionError(`Unknown motion: ${ev.kind}`);
 }
 
 function planPTP(ev, q0, ov) {
@@ -86,8 +86,8 @@ function planPTP(ev, q0, ov) {
     const flange = flangeForTcp(tcpWorldFromPose(pose, ev.base), ev.tool);
     q1 = inverse(flange, q0);
     if (!q1) {
-      throw new MotionError(`PTP: nöqtə əlçatan deyil {X ${pose.X.toFixed(1)}, Y ${pose.Y.toFixed(1)}, Z ${pose.Z.toFixed(1)}}`,
-        'Robotun çatma radiusu təxminən 950 mm-dir. Nöqtəni bazaya yaxınlaşdırın');
+      throw new MotionError(`PTP: point is out of reach {X ${pose.X.toFixed(1)}, Y ${pose.Y.toFixed(1)}, Z ${pose.Z.toFixed(1)}}`,
+        'The robot reaches about 950 mm. Move the point closer to the base');
     }
   }
   let Tc = 0;
@@ -116,15 +116,15 @@ function cartesianSamples(ev, q0, posFn, oriFn, N, ov, lengthMm, angleRad, label
     const flange = flangeForTcp(tcp, ev.tool);
     const qn = inverse(flange, q);
     if (!qn) {
-      throw new MotionError(`${label}: yolun ${(s * 100).toFixed(0)}%-də nöqtə əlçatan deyil`,
-        'Düz xətt robotun iş zonasından çıxır. PTP ilə keçin və ya nöqtələri dəyişin');
+      throw new MotionError(`${label}: point out of reach at ${(s * 100).toFixed(0)}% of the path`,
+        'The straight line leaves the work envelope. Use PTP or change the points');
     }
     let seg = 0;
     for (let i = 0; i < 6; i++) {
       const dq = Math.abs(qn[i] - q[i]);
       if (dq > 25) {
-        throw new MotionError(`${label}: ${axisName(i)} oxunda sinqulyarlıq (ani ${dq.toFixed(0)}° sıçrayış)`,
-          'Bu yol sinqulyar nöqtədən keçir (məs. A5 ≈ 0°). LIN əvəzinə PTP istifadə edin və ya oriyentasiyanı dəyişin');
+        throw new MotionError(`${label}: singularity on axis ${axisName(i)} (sudden ${dq.toFixed(0)}° jump)`,
+          'The path passes through a singularity (e.g. A5 ≈ 0°). Use PTP instead of LIN or change the orientation');
       }
       seg = Math.max(seg, dq / (ROBOT.maxSpeed[i] * ov));
     }
@@ -168,10 +168,10 @@ function planCIRC(ev, q0, ov) {
   const axb = cross(a, b);
   const den = 2 * dot(axb, axb);
   if (norm(sub(A, B)) < 1 || norm(sub(B, C)) < 1 || norm(sub(A, C)) < 1) {
-    throw new MotionError('CIRC: başlanğıc, köməkçi və son nöqtə bir-birindən fərqli olmalıdır');
+    throw new MotionError('CIRC: start, auxiliary and end points must all be different');
   }
   if (den < 1e-6 * Math.pow(norm(a) * norm(b), 2) || den < 1e-9) {
-    throw new MotionError('CIRC: üç nöqtə bir düz xətt üzərindədir, dairə qurmaq olmur', 'Köməkçi nöqtəni xəttdən kənara çəkin');
+    throw new MotionError('CIRC: the three points lie on one line, no circle is possible', 'Move the auxiliary point off the line');
   }
   const O = add(C, scale(cross(sub(scale(b, dot(a, a)), scale(a, dot(b, b))), axb), 1 / den));
   const R = norm(sub(A, O));
