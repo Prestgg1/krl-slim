@@ -91,7 +91,7 @@ export class Runner {
       if (res.done) {
         this.gen = null;
         this.setState('done');
-        this.hooks.onLog?.('Proqram bitdi', 'ok');
+        this.hooks.onLog?.('Program finished', 'ok');
         return;
       }
       const ev = res.value;
@@ -106,7 +106,7 @@ export class Runner {
           try { m = plan(ev, this.q); } catch (e) { e.line = ev.line; this.fail(e); return; }
           if (ev.approx && !this.warnedApprox) {
             this.warnedApprox = true;
-            this.hooks.onLog?.(`${ev.approx}: yaxınlaşdırma (künc hamarlanması) hələ simulyasiya olunmur, robot nöqtədə dayanır`, 'info');
+            this.hooks.onLog?.(`${ev.approx}: approximate positioning (corner blending) is not simulated yet, the robot stops at each point`, 'info');
           }
           m.t = 0;
           m.line = ev.line;
@@ -123,7 +123,7 @@ export class Runner {
         case 'tick':
           return;
         case 'halt':
-          this.hooks.onLog?.('HALT: proqram dayandırıldı. Davam etmək üçün ▶ basın', 'info');
+          this.hooks.onLog?.('HALT: program paused. Press ▶ to continue', 'info');
           this.setState('paused');
           return;
         default: break;

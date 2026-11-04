@@ -2,7 +2,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 const body = readFileSync(new URL('./app.html', import.meta.url), 'utf8');
 const html = `<!doctype html>
-<html lang="az">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">

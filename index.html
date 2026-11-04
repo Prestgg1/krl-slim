@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="az">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,7 +8,7 @@
 <body>
 <title>KRL Lab</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Pulsuz, açıq mənbəli KRL öyrənmə simulyatoru: KRL kodu yazın və 6 oxlu robotun 3D-də icrasına baxın.">
+<meta name="description" content="Free, open-source KRL learning simulator: write KRL code and watch a 6-axis robot run it in 3D.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
@@ -190,41 +190,41 @@ details.lesson[open] summary::before { content: "▾ "; }
 
 <div class="app">
   <header class="top">
-    <div class="brand"><b>KRL<i>·</i>Lab</b><span>KRL proqramlaşdırma simulyatoru · pulsuz və açıq mənbəli</span></div>
-    <span class="status" id="status" data-s="idle">Hazır</span>
+    <div class="brand"><b>KRL<i>·</i>Lab</b><span>KRL programming simulator · free and open source</span></div>
+    <span class="status" id="status" data-s="idle">Ready</span>
     <div class="spacer"></div>
-    <div class="views" role="group" aria-label="Kamera">
+    <div class="views" role="group" aria-label="Camera">
       <button class="btn small" data-view="iso">3D</button>
-      <button class="btn small" data-view="front">Ön</button>
-      <button class="btn small" data-view="side">Yan</button>
-      <button class="btn small" data-view="top">Üst</button>
-      <button class="btn small" id="clearPath" title="Çəkilmiş yolları sil">Yolu sil</button>
+      <button class="btn small" data-view="front">Front</button>
+      <button class="btn small" data-view="side">Side</button>
+      <button class="btn small" data-view="top">Top</button>
+      <button class="btn small" id="clearPath" title="Remove the drawn paths">Clear path</button>
     </div>
   </header>
 
   <main class="work">
-    <section class="left" aria-label="Proqram">
+    <section class="left" aria-label="Program">
       <div class="lessonbar">
-        <select id="lesson" aria-label="Dərs seçin"></select>
-        <button class="btn small" id="resetCode" title="Dərsin ilkin kodunu bərpa et">Kodu bərpa et</button>
+        <select id="lesson" aria-label="Choose a lesson"></select>
+        <button class="btn small" id="resetCode" title="Restore the lesson's original code">Reset code</button>
       </div>
       <details class="lesson" id="lessonBox" open>
-        <summary>Dərs</summary>
+        <summary>Lesson</summary>
         <div class="lesson-body" id="lessonText"></div>
       </details>
       <div class="editor" id="editor">
         <div class="gutterwrap"><div class="gutter"></div></div>
         <div class="code">
           <pre aria-hidden="true"><code></code></pre>
-          <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="KRL kodu"></textarea>
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="KRL code"></textarea>
         </div>
       </div>
       <div>
         <div class="runbar">
-          <button class="btn primary" id="run" title="İşə sal (F5)"><svg viewBox="0 0 16 16"><path d="M4 2l10 6-10 6z" fill="currentColor"/></svg>İşə sal</button>
-          <button class="btn" id="step" title="Bir sətir (F10)"><svg viewBox="0 0 16 16"><path d="M2 2l8 6-8 6zM11 2h3v12h-3z" fill="currentColor"/></svg>Addım</button>
-          <button class="btn" id="pause" title="Pauza"><svg viewBox="0 0 16 16"><path d="M3 2h4v12H3zM9 2h4v12H9z" fill="currentColor"/></svg>Pauza</button>
-          <button class="btn" id="stop" title="Dayandır"><svg viewBox="0 0 16 16"><path d="M3 3h10v10H3z" fill="currentColor"/></svg>Dayandır</button>
+          <button class="btn primary" id="run" title="Run (F5)"><svg viewBox="0 0 16 16"><path d="M4 2l10 6-10 6z" fill="currentColor"/></svg>Run</button>
+          <button class="btn" id="step" title="One line (F10)"><svg viewBox="0 0 16 16"><path d="M2 2l8 6-8 6zM11 2h3v12h-3z" fill="currentColor"/></svg>Step</button>
+          <button class="btn" id="pause" title="Pause"><svg viewBox="0 0 16 16"><path d="M3 2h4v12H3zM9 2h4v12H9z" fill="currentColor"/></svg>Pause</button>
+          <button class="btn" id="stop" title="Stop"><svg viewBox="0 0 16 16"><path d="M3 3h10v10H3z" fill="currentColor"/></svg>Stop</button>
           <label class="ov" for="ovr">OV <input type="range" id="ovr" min="5" max="100" step="5" value="50"><output id="ovrOut">50%</output></label>
         </div>
         <div class="errbox" id="errbox" hidden></div>
@@ -240,31 +240,31 @@ details.lesson[open] summary::before { content: "▾ "; }
         <div class="tabs" role="tablist">
           <button role="tab" aria-selected="true" data-tab="jog">Jog</button>
           <button role="tab" aria-selected="false" data-tab="io">I/O</button>
-          <button role="tab" aria-selected="false" data-tab="vars">Dəyişənlər</button>
-          <button role="tab" aria-selected="false" data-tab="console">Konsol<span class="count" id="errCount" hidden>!</span></button>
+          <button role="tab" aria-selected="false" data-tab="vars">Variables</button>
+          <button role="tab" aria-selected="false" data-tab="console">Console<span class="count" id="errCount" hidden>!</span></button>
         </div>
         <div class="pane" data-pane="jog">
           <div class="jog">
             <div class="axes" id="axes"></div>
             <div class="cart">
-              <label for="jogStep">Addım <select id="jogStep"><option>1</option><option selected>10</option><option>50</option></select> mm</label>
+              <label for="jogStep">Step <select id="jogStep"><option>1</option><option selected>10</option><option>50</option></select> mm</label>
               <div class="grid" id="cartJog"></div>
               <div class="teach">
-                <button class="btn small" id="teachPtp" title="Cari ox mövqeyini koda əlavə et">Teach PTP</button>
-                <button class="btn small" id="teachLin" title="Cari XYZ mövqeyini koda əlavə et">Teach LIN</button>
+                <button class="btn small" id="teachPtp" title="Insert the current axis position into the code">Teach PTP</button>
+                <button class="btn small" id="teachLin" title="Insert the current XYZ position into the code">Teach LIN</button>
                 <button class="btn small" id="goHome">HOME</button>
               </div>
-              <div class="note">Proqram işləmədikdə robotu əl ilə hərəkət etdirin. Teach cari nöqtəni kursorun altına yazır.</div>
+              <div class="note">Move the robot by hand while no program is running. Teach writes the current point below the cursor.</div>
             </div>
           </div>
         </div>
         <div class="pane" data-pane="io" hidden>
           <div class="io">
-            <div><h3>Girişlər $IN</h3><div class="list" id="ins"></div></div>
-            <div><h3>Çıxışlar $OUT</h3><div class="list" id="outs"></div></div>
+            <div><h3>Inputs $IN</h3><div class="list" id="ins"></div></div>
+            <div><h3>Outputs $OUT</h3><div class="list" id="outs"></div></div>
           </div>
         </div>
-        <div class="pane vars" data-pane="vars" hidden><table id="vars"><tbody><tr><td colspan="2" class="note">Proqramı işə salın və ya Addım düyməsini basın: dəyişənlər burada görünəcək.</td></tr></tbody></table></div>
+        <div class="pane vars" data-pane="vars" hidden><table id="vars"><tbody><tr><td colspan="2" class="note">Run the program or press Step to see the variables here.</td></tr></tbody></table></div>
         <div class="pane console" data-pane="console" hidden id="console"></div>
       </div>
     </section>

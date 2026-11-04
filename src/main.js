@@ -9,8 +9,8 @@ import { compose, invert, poseToFrame } from './math.js';
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const store = {
-  get(k) { try { return localStorage.getItem('krllab:' + k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem('krllab:' + k, v); } catch { /* storage unavailable */ } },
+  get(k) { try { return localStorage.getItem('krllab-v2:' + k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem('krllab-v2:' + k, v); } catch { /* storage unavailable */ } },
 };
 
 const scene = new RobotScene($('#viewport'));
@@ -23,7 +23,7 @@ darkMQ.addEventListener?.('change', applyTheme);
 new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 applyTheme();
 
-const STATUS = { idle: 'Hazır', running: 'İşləyir', paused: 'Pauza', done: 'Bitdi', error: 'Xəta' };
+const STATUS = { idle: 'Ready', running: 'Running', paused: 'Paused', done: 'Finished', error: 'Error' };
 let lastTool = { X: 0, Y: 0, Z: 0, A: 0, B: 0, C: 0 };
 let lastBase = { X: 0, Y: 0, Z: 0, A: 0, B: 0, C: 0 };
 let errCount = 0;
@@ -39,7 +39,7 @@ function log(msg, kind = 'msg', line, hint) {
   if (kind === 'busy') return;
   const d = document.createElement('div');
   d.className = kind;
-  d.textContent = (line ? `[sətir ${line}] ` : '') + msg;
+  d.textContent = (line ? `[line ${line}] ` : '') + msg;
   if (hint) { const h = document.createElement('span'); h.className = 'hint'; h.textContent = '↳ ' + hint; d.appendChild(h); }
   if (line) d.addEventListener('click', () => editor.setErrorLine(line));
   consoleEl.appendChild(d);
@@ -52,7 +52,7 @@ function showError(err, line) {
   box.hidden = false;
   box.innerHTML = '';
   const t = document.createElement('div');
-  t.textContent = (line ? `Sətir ${line}: ` : '') + err.message;
+  t.textContent = (line ? `Line ${line}: ` : '') + err.message;
   box.appendChild(t);
   if (err.hint) { const s = document.createElement('small'); s.textContent = err.hint; box.appendChild(s); }
   box.onclick = () => line && editor.setErrorLine(line);
@@ -74,7 +74,7 @@ const runner = new Runner({
     editor.setReadOnly(active);
     $('#pause').disabled = s !== 'running';
     $('#stop').disabled = !active;
-    $('#run').lastChild.textContent = s === 'paused' ? 'Davam et' : 'İşə sal';
+    $('#run').lastChild.textContent = s === 'paused' ? 'Resume' : 'Run';
     setJogEnabled(!active);
     refreshVars();
   },
@@ -87,9 +87,9 @@ const runner = new Runner({
     renderOuts();
     if (n === 1) {
       const r = scene.setGripper(v);
-      if (r === 'grab') log('Tutucu: hissə tutuldu', 'ok');
-      else if (r === 'miss') log('Tutucu bağlandı, amma yaxında hissə yoxdur (TCP kubun mərkəzində olmalıdır)', 'info');
-      else if (r === 'release') log('Tutucu: hissə buraxıldı', 'ok');
+      if (r === 'grab') log('Gripper: part picked', 'ok');
+      else if (r === 'miss') log('Gripper closed, but no part is near (the TCP must be at the cube centre)', 'info');
+      else if (r === 'release') log('Gripper: part released', 'ok');
     }
   },
   onOutsReset: () => renderOuts(),
@@ -108,7 +108,7 @@ function freshStart() {
     showError(e, e.line);
     return false;
   }
-  log(`Proqram yükləndi: ${runner.interp.prog.order[0]}()`, 'ok');
+  log(`Program loaded: ${runner.interp.prog.order[0]}()`, 'ok');
   return true;
 }
 
@@ -121,7 +121,7 @@ $('#step').addEventListener('click', () => {
   runner.step();
 });
 $('#pause').addEventListener('click', () => runner.pause());
-$('#stop').addEventListener('click', () => { runner.stop(); log('Dayandırıldı', 'info'); });
+$('#stop').addEventListener('click', () => { runner.stop(); log('Stopped', 'info'); });
 window.addEventListener('keydown', (e) => {
   if (e.key === 'F5') { e.preventDefault(); $('#run').click(); }
   if (e.key === 'F10') { e.preventDefault(); $('#step').click(); }
@@ -194,7 +194,7 @@ function jogCart(axis, sgn) {
   p['XYZ'.indexOf(axis)] += step;
   const flange = compose({ R: tcp.R, p }, invert(poseToFrame(lastTool)));
   const q = inverse(flange, runner.q);
-  if (!q) { log(`Jog: ${axis} istiqamətində daha irəli getmək olmur (iş zonasının sərhədi)`, 'info'); return; }
+  if (!q) { log(`Jog: cannot move further in ${axis} (edge of the work envelope)`, 'info'); return; }
   runner.q = q;
 }
 function setJogEnabled(on) {
@@ -214,7 +214,7 @@ $('#teachLin').addEventListener('click', () => {
 
 // ---------- I/O ----------
 const N_IO = 8;
-const OUT_LABELS = { 1: 'tutucu', 2: 'lampa' };
+const OUT_LABELS = { 1: 'gripper', 2: 'lamp' };
 const insEl = $('#ins'), outsEl = $('#outs');
 for (let n = 1; n <= N_IO; n++) {
   const row = document.createElement('div');

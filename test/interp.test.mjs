@@ -31,7 +31,7 @@ DEF main()
   ENDIF
   SWITCH i
   CASE 11
-    MsgNotify("i on bir")
+    MsgNotify("i is eleven")
   DEFAULT
     MsgNotify("default")
   ENDSWITCH
@@ -45,7 +45,7 @@ DEF main()
   WHILE $IN[1] AND (i < 5)
     i = i + 1
   ENDWHILE
-  MsgNotify("kv", sq(4.0))
+  MsgNotify("sq", sq(4.0))
   inc(i)
   MsgNotify("i", i)
 END
@@ -58,14 +58,14 @@ END
 `);
 console.log(r.logs, r.outs, r.motions.map(m=>[m.kind, m.target, m.approx]));
 assert.deepEqual(r.outs, {2:true});
-assert.deepEqual(r.logs, ['i on bir', 'kv 16', 'i 105']);
+assert.deepEqual(r.logs, ['i is eleven', 'sq 16', 'i 105']);
 // errors
 for (const [src, re] of [
- ['DEF m()\n DECL INT i\n i = j\nEND', /elan olunmayıb/],
- ['DEF m()\n DECL INT i\n IF i > 1 AND i < 3 THEN\n ENDIF\nEND', /işə salınmayıb/],
- ['DEF m()\n DECL INT i\n i=2\n IF i > 1 AND i < 3 THEN\n ENDIF\nEND', /AND yalnız BOOL/],
- ['DEF m()\n FOR i = 1 TO 3\n ENDFOR\nEND', /elan olunmayıb/],
- ['DEF m()\n LIN HOME\nEND', /Kartezian/],
+ ['DEF m()\n DECL INT i\n i = j\nEND', /is not declared/],
+ ['DEF m()\n DECL INT i\n IF i > 1 AND i < 3 THEN\n ENDIF\nEND', /not initialized/],
+ ['DEF m()\n DECL INT i\n i=2\n IF i > 1 AND i < 3 THEN\n ENDIF\nEND', /AND only works on BOOL/],
+ ['DEF m()\n FOR i = 1 TO 3\n ENDFOR\nEND', /is not declared/],
+ ['DEF m()\n LIN HOME\nEND', /Cartesian/],
  ['DEF m()\n PTP {X 1\nEND', /\}/],
 ]) {
   try { run(src); assert.fail('no error for '+src); } catch (e) { if (e.code==='ERR_ASSERTION') throw e; console.log('ok err:', e.line, e.message); assert.match(e.message, re); }

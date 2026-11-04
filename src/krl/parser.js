@@ -37,14 +37,14 @@ class Parser {
   expect(type, value, msg) {
     if (this.is(type, value)) return this.next();
     const t = this.cur;
-    const got = t.type === 'NL' ? 'sətrin sonu' : t.type === 'EOF' ? 'faylın sonu' : `'${t.raw || t.value}'`;
-    throw new KrlError(msg || `Gözlənilirdi: '${value || type}', tapıldı: ${got}`, t.line);
+    const got = t.type === 'NL' ? 'end of line' : t.type === 'EOF' ? 'end of file' : `'${t.raw || t.value}'`;
+    throw new KrlError(msg || `Expected '${value || type}', found ${got}`, t.line);
   }
   skipNL() { while (this.is('NL')) this.next(); }
   endOfStatement() {
     if (!this.is('NL') && !this.is('EOF')) {
       const t = this.cur;
-      throw new KrlError(`Əmrdən sonra artıq mətn: '${t.raw || t.value}'`, t.line);
+      throw new KrlError(`Unexpected text after the statement: '${t.raw || t.value}'`, t.line);
     }
     this.skipNL();
   }
@@ -59,24 +59,24 @@ class Parser {
       else if (this.isKw('DEFDAT')) this.defdat(prog);
       else {
         const t = this.cur;
-        throw new KrlError(`Proqram DEF ilə başlamalıdır (məs. DEF main() ... END). Tapıldı: '${t.raw || t.value}'`, t.line);
+        throw new KrlError(`A program must start with DEF (e.g. DEF main() ... END). Found: '${t.raw || t.value}'`, t.line);
       }
       this.skipNL();
     }
-    if (!prog.order.length) throw new KrlError('Proqramda heç bir DEF tapılmadı', 1);
+    if (!prog.order.length) throw new KrlError('No DEF found in the program', 1);
     return prog;
   }
 
   defdat(prog) {
     const start = this.next();
-    this.expect('ID', undefined, 'DEFDAT-dan sonra ad gözlənilirdi');
+    this.expect('ID', undefined, 'Name expected after DEFDAT');
     this.accept('KW', 'PUBLIC');
     this.endOfStatement();
     while (!this.isKw('ENDDAT')) {
-      if (this.is('EOF')) throw new KrlError('ENDDAT tapılmadı', start.line);
+      if (this.is('EOF')) throw new KrlError('ENDDAT not found', start.line);
       this.accept('KW', 'GLOBAL');
       const s = this.declaration();
-      if (!s) throw new KrlError('DEFDAT içində yalnız DECL ola bilər', this.cur.line);
+      if (!s) throw new KrlError('Only DECL is allowed inside DEFDAT', this.cur.line);
       prog.dat.push(s);
       this.endOfStatement();
     }
@@ -89,14 +89,14 @@ class Parser {
     let retType = null;
     if (isFct) {
       const t = this.next();
-      if (!(t.type === 'KW' || t.type === 'ID') || !TYPES.has(t.value)) throw new KrlError('DEFFCT-dən sonra qaytarılan tip gözlənilirdi (məs. DEFFCT REAL f())', t.line);
+      if (!(t.type === 'KW' || t.type === 'ID') || !TYPES.has(t.value)) throw new KrlError('Return type expected after DEFFCT (e.g. DEFFCT REAL f())', t.line);
       retType = t.value;
     }
-    const nameTok = this.expect('ID', undefined, 'Proqramın adı gözlənilirdi');
+    const nameTok = this.expect('ID', undefined, 'Routine name expected');
     const params = [];
-    this.expect('OP', '(', 'Addan sonra "(" gözlənilirdi, məs. DEF main()');
+    this.expect('OP', '(', '"(" expected after the name, e.g. DEF main()');
     while (!this.isOp(')')) {
-      const pn = this.expect('ID', undefined, 'Parametr adı gözlənilirdi');
+      const pn = this.expect('ID', undefined, 'Parameter name expected');
       let mode = 'IN';
       if (this.accept('OP', ':')) mode = this.expect('KW', undefined).value;
       params.push({ name: pn.value, out: mode === 'OUT' });
@@ -108,7 +108,7 @@ class Parser {
     const body = this.block([endKw], start.line, isFct ? 'DEFFCT' : 'DEF');
     this.next();
     const r = { name: nameTok.value, params, body, isFct, retType, line: start.line, endLine: this.toks[this.i - 1].line };
-    if (prog.routines.has(r.name)) throw new KrlError(`'${nameTok.raw}' adlı proqram artıq var`, start.line);
+    if (prog.routines.has(r.name)) throw new KrlError(`A routine named '${nameTok.raw}' already exists`, start.line);
     prog.routines.set(r.name, r);
     prog.order.push(r.name);
     this.endOfStatement();
@@ -118,7 +118,7 @@ class Parser {
     const stmts = [];
     this.skipNL();
     while (!this.isKw(...terminators)) {
-      if (this.is('EOF')) throw new KrlError(`${opener} bağlanmayıb: ${terminators[0]} tapılmadı`, startLine);
+      if (this.is('EOF')) throw new KrlError(`${opener} is not closed: ${terminators[0]} not found`, startLine);
       const s = this.statement();
       if (s) stmts.push(s);
     }
@@ -132,14 +132,14 @@ class Parser {
     const isConst = !!this.accept('KW', 'CONST');
     const t = this.cur;
     if (!((t.type === 'KW' || t.type === 'ID') && TYPES.has(t.value))) {
-      if (hasDecl) throw new KrlError(`Naməlum tip: '${t.raw || t.value}'. Mövcud tiplər: ${[...TYPES].join(', ')}`, t.line);
+      if (hasDecl) throw new KrlError(`Unknown type: '${t.raw || t.value}'. Available types: ${[...TYPES].join(', ')}`, t.line);
       return null;
     }
     this.next();
     const type = t.value;
     const vars = [];
     do {
-      const nm = this.expect('ID', undefined, 'Dəyişən adı gözlənilirdi');
+      const nm = this.expect('ID', undefined, 'Variable name expected');
       const dims = [];
       if (this.accept('OP', '[')) {
         do { if (!this.isOp(']')) dims.push(this.expr()); } while (this.accept('OP', ','));
@@ -198,20 +198,20 @@ class Parser {
           this.next();
           if (this.accept('KW', 'SEC')) { const e = this.expr(); this.endOfStatement(); return { t: 'waitsec', expr: e, line }; }
           if (this.cur.type === 'ID' && this.cur.value === 'FOR') { /* unreachable: FOR is a keyword */ }
-          this.expect('KW', 'FOR', 'WAIT-dən sonra SEC və ya FOR gözlənilirdi');
+          this.expect('KW', 'FOR', 'SEC or FOR expected after WAIT');
           const cond = this.expr();
           this.endOfStatement();
           return { t: 'waitfor', cond, line };
         }
-        case 'GOTO': throw new KrlError('GOTO bu simulyatorda dəstəklənmir (pis təcrübədir, dövrlərdən istifadə edin)', line);
+        case 'GOTO': throw new KrlError('GOTO is not supported in this simulator (bad practice, use loops)', line);
         case 'INTERRUPT': case 'TRIGGER': case 'STRUC': case 'ENUM':
-          throw new KrlError(`${t.value} hələ dəstəklənmir`, line);
+          throw new KrlError(`${t.value} is not supported yet`, line);
         default:
           if (MOTION[t.value]) return this.motion();
           if (['ELSE', 'ENDIF', 'ENDFOR', 'ENDWHILE', 'ENDLOOP', 'UNTIL', 'CASE', 'DEFAULT', 'ENDSWITCH', 'END', 'ENDFCT'].includes(t.value))
-            throw new KrlError(`Gözlənilməz '${t.value}' (uyğun açılış əmri yoxdur)`, line);
+            throw new KrlError(`Unexpected '${t.value}' (no matching opening statement)`, line);
           if (TYPES.has(t.value)) { const d = this.declaration(); this.endOfStatement(); return d; }
-          throw new KrlError(`Gözlənilməz açar söz: '${t.raw || t.value}'`, line);
+          throw new KrlError(`Unexpected keyword: '${t.raw || t.value}'`, line);
       }
     }
     if (t.type === 'ID' && TYPES.has(t.value) && this.peek().type === 'ID') {
@@ -222,27 +222,27 @@ class Parser {
       if (this.accept('OP', '=')) {
         const expr = this.expr();
         this.endOfStatement();
-        if (!['var', 'index', 'member'].includes(target.t)) throw new KrlError('Bu ifadəyə dəyər mənimsədilə bilməz', line);
+        if (!['var', 'index', 'member'].includes(target.t)) throw new KrlError('Cannot assign to this expression', line);
         return { t: 'assign', target, expr, line };
       }
       if (target.t === 'call') { this.endOfStatement(); return { t: 'callstmt', call: target, line }; }
       if (target.t === 'var' && this.is('NL')) { this.endOfStatement(); return { t: 'callstmt', call: { t: 'call', name: target.name, args: [], line }, line }; }
-      throw new KrlError(`Gözlənilirdi '=' və ya proqram çağırışı: '${t.raw}'`, line);
+      throw new KrlError(`Expected '=' or a routine call: '${t.raw}'`, line);
     }
-    throw new KrlError(`Gözlənilməz simvol: '${t.raw || t.value}'`, line);
+    throw new KrlError(`Unexpected symbol: '${t.raw || t.value}'`, line);
   }
 
   motion() {
     const t = this.next();
     const [kind, rel] = MOTION[t.value];
     const line = t.line;
-    if (this.is('NL')) throw new KrlError(`${t.value}-dən sonra hədəf nöqtə gözlənilirdi`, line);
+    if (this.is('NL')) throw new KrlError(`Target point expected after ${t.value}`, line);
     const args = [this.expr()];
     let ca = null;
     if (kind === 'CIRC') {
-      this.expect('OP', ',', 'CIRC iki nöqtə tələb edir: CIRC köməkçi_nöqtə, son_nöqtə');
+      this.expect('OP', ',', 'CIRC needs two points: CIRC aux_point, end_point');
       args.push(this.expr());
-      if (this.accept('OP', ',')) { this.expect('KW', 'CA', 'CA (dairə bucağı) gözlənilirdi'); ca = this.expr(); }
+      if (this.accept('OP', ',')) { this.expect('KW', 'CA', 'CA (circular angle) expected'); ca = this.expr(); }
     }
     let approx = null;
     if (this.cur.type === 'KW' && APPROX.has(this.cur.value)) approx = this.next().value;
@@ -264,7 +264,7 @@ class Parser {
   ifStmt() {
     const line = this.next().line;
     const cond = this.expr();
-    this.expect('KW', 'THEN', 'IF şərtindən sonra THEN gözlənilirdi');
+    this.expect('KW', 'THEN', 'THEN expected after the IF condition');
     this.endOfStatement();
     const thenB = this.block(['ELSE', 'ENDIF'], line, 'IF');
     let elseB = [];
@@ -279,10 +279,10 @@ class Parser {
 
   forStmt() {
     const line = this.next().line;
-    const v = this.expect('ID', undefined, 'FOR-dan sonra sayğac dəyişəni gözlənilirdi');
+    const v = this.expect('ID', undefined, 'Counter variable expected after FOR');
     this.expect('OP', '=');
     const from = this.expr();
-    this.expect('KW', 'TO', 'FOR ... TO ... gözlənilirdi');
+    this.expect('KW', 'TO', 'FOR ... TO ... expected');
     const to = this.expr();
     let step = null;
     if (this.accept('KW', 'STEP')) step = this.expr();
@@ -299,7 +299,7 @@ class Parser {
     const cases = [];
     let def = null;
     while (!this.isKw('ENDSWITCH')) {
-      if (this.is('EOF')) throw new KrlError('ENDSWITCH tapılmadı', line);
+      if (this.is('EOF')) throw new KrlError('ENDSWITCH not found', line);
       if (this.accept('KW', 'CASE')) {
         const values = [this.expr()];
         while (this.accept('OP', ',')) values.push(this.expr());
@@ -308,7 +308,7 @@ class Parser {
       } else if (this.accept('KW', 'DEFAULT')) {
         this.endOfStatement();
         def = this.block(['CASE', 'DEFAULT', 'ENDSWITCH'], line, 'SWITCH');
-      } else throw new KrlError('SWITCH içində CASE və ya DEFAULT gözlənilirdi', this.cur.line);
+      } else throw new KrlError('CASE or DEFAULT expected inside SWITCH', this.cur.line);
     }
     this.next(); this.endOfStatement();
     return { t: 'switch', expr, cases, def, line };
@@ -369,7 +369,7 @@ class Parser {
       } else if (this.isOp('.')) {
         const line = this.next().line;
         const f = this.next();
-        if (f.type !== 'ID' && f.type !== 'KW') throw new KrlError("'.'-dan sonra sahə adı gözlənilirdi", line);
+        if (f.type !== 'ID' && f.type !== 'KW') throw new KrlError("Component name expected after '.'", line);
         e = { t: 'member', obj: e, field: f.value, line };
       } else return e;
     }
@@ -392,18 +392,18 @@ class Parser {
             args.push(this.expr());
             if (!this.accept('OP', ',')) break;
           }
-          this.expect('OP', ')', 'Funksiya çağırışında ")" gözlənilirdi');
+          this.expect('OP', ')', '")" expected in function call');
           return { t: 'call', name: t.value, raw: t.raw, args, line: t.line };
         }
         return { t: 'var', name: t.value, raw: t.raw, line: t.line };
       case 'OP':
-        if (t.value === '(') { const e = this.expr(); this.expect('OP', ')', 'Bağlanan mötərizə ")" gözlənilirdi'); return e; }
+        if (t.value === '(') { const e = this.expr(); this.expect('OP', ')', 'Closing ")" expected'); return e; }
         if (t.value === '{') return this.aggregate(t);
         break;
       default: break;
     }
-    const got = t.type === 'NL' ? 'sətrin sonu' : `'${t.raw || t.value}'`;
-    throw new KrlError(`İfadə gözlənilirdi, tapıldı: ${got}`, t.line);
+    const got = t.type === 'NL' ? 'end of line' : `'${t.raw || t.value}'`;
+    throw new KrlError(`Expression expected, found ${got}`, t.line);
   }
 
   aggregate(open) {
@@ -415,12 +415,12 @@ class Parser {
     const fields = [];
     while (!this.isOp('}')) {
       const f = this.next();
-      if (f.type !== 'ID' && f.type !== 'KW') throw new KrlError(`Aqreqatda sahə adı gözlənilirdi (məs. X 100), tapıldı: '${f.raw || f.value}'`, f.line);
+      if (f.type !== 'ID' && f.type !== 'KW') throw new KrlError(`Component name expected in aggregate (e.g. X 100), found '${f.raw || f.value}'`, f.line);
       const e = this.unaryValue();
       fields.push({ name: f.value, expr: e });
       if (!this.accept('OP', ',')) break;
     }
-    this.expect('OP', '}', 'Aqreqat "}" ilə bağlanmalıdır');
+    this.expect('OP', '}', 'Aggregate must be closed with "}"');
     return { t: 'agg', typeName, fields, line: open.line };
   }
 
