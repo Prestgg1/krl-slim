@@ -1,0 +1,12 @@
+{
+  "name": "krl-lab",
+  "version": "0.1.0",
+  "description": "Free, open-source KRL (KUKA Robot Language) learning simulator in the browser",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node test/kin.test.mjs && node test/interp.test.mjs && node test/run.test.mjs && node test/lessons.test.mjs",
+    "start": "node build.mjs && python3 -m http.server 8080"
+  }
+}

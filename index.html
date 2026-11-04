@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>KRL Lab</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Pulsuz, açıq mənbəli KRL öyrənmə simulyatoru: KRL kodu yazın və 6 oxlu robotun 3D-də icrasına baxın.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: teach-pendant split. Program side (lesson + editor) on the left, cell view on the right
+   with a docked tool strip (Jog / I/O / variables / console) under it. Stacks on phones. */
+:root {
+  --bg: #e6e9ec;
+  --panel: #f6f7f8;
+  --panel-2: #eceff2;
+  --line: #cfd5db;
+  --fg: #1d2329;
+  --muted: #5d6873;
+  --accent: #b88a00;        /* signal yellow, darkened for text on light */
+  --accent-fill: #f2c230;
+  --accent-ink: #1d1a10;
+  --steel: #2f6f9f;
+  --ok: #24855b;
+  --warn: #a86400;
+  --err: #c2363c;
+  --err-bg: #fbe9ea;
+  --code-bg: #fbfbfc;
+  --band: rgba(242, 194, 48, .22);
+  --t-kw: #7a3fb0; --t-move: #b25e00; --t-type: #2a6fa8; --t-sys: #0e7d73; --t-num: #a2305c; --t-str: #2f7d32; --t-com: #808a94; --t-enum: #6a5acd;
+  --font-display: "Chakra Petch", "Bahnschrift", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1215; --panel: #171b20; --panel-2: #1d2228; --line: #2b3239; --fg: #e3e7eb; --muted: #94a0ab;
+    --accent: #f2c230; --accent-fill: #f2c230; --accent-ink: #1d1a10; --steel: #6aa8d8;
+    --ok: #4cc38a; --warn: #f0a540; --err: #ff6b70; --err-bg: #3a1a1c; --code-bg: #12161a; --band: rgba(242, 194, 48, .14);
+    --t-kw: #c79bf0; --t-move: #ffb05c; --t-type: #7cb8ea; --t-sys: #4fd1c5; --t-num: #f28fb3; --t-str: #8bd18f; --t-com: #6c7884; --t-enum: #a99cf5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1215; --panel: #171b20; --panel-2: #1d2228; --line: #2b3239; --fg: #e3e7eb; --muted: #94a0ab;
+  --accent: #f2c230; --accent-fill: #f2c230; --accent-ink: #1d1a10; --steel: #6aa8d8;
+  --ok: #4cc38a; --warn: #f0a540; --err: #ff6b70; --err-bg: #3a1a1c; --code-bg: #12161a; --band: rgba(242, 194, 48, .14);
+  --t-kw: #c79bf0; --t-move: #ffb05c; --t-type: #7cb8ea; --t-sys: #4fd1c5; --t-num: #f28fb3; --t-str: #8bd18f; --t-com: #6c7884; --t-enum: #a99cf5;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 14px; }
+* { box-sizing: border-box; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent-fill); outline-offset: 2px; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr; padding-left: max(0px, env(safe-area-inset-left, 0px)); padding-right: max(0px, env(safe-area-inset-right, 0px)); }
+header.top {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding-block: 8px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--panel); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand b { font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: .02em; }
+.brand b i { font-style: normal; color: var(--accent); }
+.brand span { color: var(--muted); font-size: 12.5px; }
+.status { font-family: var(--font-display); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.status[data-s="running"] { color: var(--ok); border-color: var(--ok); }
+.status[data-s="paused"] { color: var(--warn); border-color: var(--warn); }
+.status[data-s="error"] { color: var(--err); border-color: var(--err); }
+.status[data-s="done"] { color: var(--steel); border-color: var(--steel); }
+.spacer { flex: 1; }
+.views { display: flex; gap: 4px; }
+
+.btn { border: 1px solid var(--line); background: var(--panel-2); border-radius: var(--radius); padding: 6px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; line-height: 1.1; }
+.btn:hover { border-color: var(--muted); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.primary { background: var(--accent-fill); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+.btn.small { padding: 4px 8px; font-size: 12.5px; }
+.btn svg { width: 14px; height: 14px; }
+
+main.work { min-height: 0; display: grid; grid-template-columns: minmax(340px, 40%) 1fr; }
+.left { min-width: 0; min-height: 0; display: grid; grid-template-rows: auto auto 1fr auto; border-right: 1px solid var(--line); background: var(--panel); }
+.right { min-width: 0; min-height: 0; display: grid; grid-template-rows: 1fr 250px; }
+
+.lessonbar { display: flex; gap: 8px; align-items: center; padding: 10px 12px 6px; }
+.lessonbar select { flex: 1; min-width: 0; padding: 6px 8px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--panel-2); font-family: var(--font-display); font-weight: 600; }
+details.lesson { padding: 0 12px 8px; }
+details.lesson summary { cursor: pointer; color: var(--muted); font-size: 12.5px; letter-spacing: .04em; text-transform: uppercase; font-family: var(--font-display); list-style: none; }
+details.lesson summary::before { content: "▸ "; }
+details.lesson[open] summary::before { content: "▾ "; }
+.lesson-body { max-height: 30vh; overflow: auto; line-height: 1.5; font-size: 13.5px; padding-right: 4px; }
+.lesson-body p { margin: 6px 0; max-width: 68ch; }
+.lesson-body code { font-family: var(--font-mono); font-size: 12.5px; background: var(--panel-2); border: 1px solid var(--line); padding: 0 4px; border-radius: 4px; }
+.lesson-body .task { border-left: 3px solid var(--accent-fill); padding-left: 10px; }
+
+.editor { position: relative; min-height: 200px; overflow: hidden; background: var(--code-bg); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 44px 1fr; font-family: var(--font-mono); font-size: 13.5px; line-height: 21px; }
+.editor .gutterwrap { overflow: hidden; background: var(--panel-2); border-right: 1px solid var(--line); }
+.editor .gutter { padding: 10px 0; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.editor .ln { padding-right: 8px; height: 21px; }
+.editor .ln.active { color: var(--accent-ink); background: var(--accent-fill); }
+.editor .ln.err { color: #fff; background: var(--err); }
+.editor .code { position: relative; overflow: hidden; min-width: 0; }
+.editor .band { position: absolute; left: 0; right: 0; top: calc(10px + var(--line, 0) * 21px); height: 21px; background: var(--band); pointer-events: none; }
+.editor .band.err { background: var(--err-bg); }
+.editor pre, .editor textarea { margin: 0; padding: 10px 12px; font: inherit; line-height: inherit; white-space: pre; tab-size: 2; letter-spacing: 0; }
+.editor pre { position: absolute; inset: 0 auto auto 0; pointer-events: none; color: var(--fg); min-width: 100%; }
+.editor textarea { position: absolute; inset: 0; width: 100%; height: 100%; resize: none; border: 0; outline: none; background: transparent; color: transparent; caret-color: var(--fg); overflow: auto; }
+.editor textarea::selection { background: rgba(47, 111, 159, .3); color: transparent; }
+.editor.ro textarea { caret-color: transparent; }
+.t-kw { color: var(--t-kw); font-weight: 500; } .t-move { color: var(--t-move); font-weight: 500; } .t-type { color: var(--t-type); }
+.t-sys { color: var(--t-sys); } .t-num { color: var(--t-num); } .t-str { color: var(--t-str); } .t-com { color: var(--t-com); font-style: italic; } .t-enum { color: var(--t-enum); }
+
+.runbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px; }
+.ov { display: flex; align-items: center; gap: 8px; margin-left: auto; font-family: var(--font-display); font-size: 12.5px; color: var(--muted); }
+.ov input { width: 110px; accent-color: var(--accent-fill); }
+.ov output { min-width: 3.5ch; font-variant-numeric: tabular-nums; color: var(--fg); }
+.errbox { margin: 0 12px 10px; padding: 8px 10px; border-radius: var(--radius); background: var(--err-bg); color: var(--err); border: 1px solid var(--err); font-size: 13px; cursor: pointer; }
+.errbox small { display: block; color: var(--fg); opacity: .85; margin-top: 3px; }
+
+.viewport { position: relative; min-height: 0; overflow: hidden; }
+.viewport canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.hud { position: absolute; left: 10px; top: 10px; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.55; background: color-mix(in srgb, var(--panel) 86%, transparent); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 9px; pointer-events: none; font-variant-numeric: tabular-nums; }
+.hud .k { color: var(--muted); display: inline-block; width: 2.2ch; }
+.hud .row { display: grid; grid-template-columns: repeat(3, 9.5ch); }
+.hud hr { border: 0; border-top: 1px solid var(--line); margin: 3px 0; }
+.legend { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 10px; font-size: 11.5px; color: var(--muted); background: color-mix(in srgb, var(--panel) 86%, transparent); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 8px; }
+.legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 4px; border-radius: 2px; }
+
+.dock { min-height: 0; display: grid; grid-template-rows: auto 1fr; background: var(--panel); border-top: 1px solid var(--line); }
+.tabs { display: flex; gap: 2px; padding: 6px 10px 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tabs button { border: 0; background: none; padding: 6px 12px 7px; cursor: pointer; font-family: var(--font-display); font-weight: 600; font-size: 13px; letter-spacing: .03em; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent-fill); }
+.tabs .count { font-family: var(--font-body); font-weight: 500; font-size: 11px; background: var(--err); color: #fff; border-radius: 999px; padding: 0 6px; margin-left: 4px; }
+.pane { min-height: 0; overflow: auto; padding: 10px 12px; }
+
+.jog { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; }
+.axes { display: grid; gap: 4px; }
+.axis { display: grid; grid-template-columns: 2.6ch 1fr 7ch; gap: 8px; align-items: center; font-family: var(--font-mono); font-size: 12.5px; }
+.axis input { width: 100%; accent-color: var(--steel); }
+.axis output { text-align: right; font-variant-numeric: tabular-nums; }
+.cart { display: grid; gap: 8px; align-content: start; }
+.cart .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.cart .grid .btn { justify-content: center; font-family: var(--font-mono); font-size: 12.5px; }
+.cart label { font-size: 12.5px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.cart select { padding: 3px 6px; border-radius: 4px; border: 1px solid var(--line); background: var(--panel-2); }
+.teach { display: flex; gap: 6px; flex-wrap: wrap; }
+.note { color: var(--muted); font-size: 12px; }
+
+.io { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.io h3, .vars h3 { margin: 0 0 6px; font-family: var(--font-display); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.io .list { display: grid; gap: 4px; }
+.sig { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12.5px; }
+.sig .lbl { color: var(--muted); font-family: var(--font-body); font-size: 12px; }
+.switch { position: relative; width: 34px; height: 18px; border-radius: 999px; background: var(--line); border: 0; padding: 0; cursor: pointer; flex: none; }
+.switch::after { content: ""; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--panel); transition: transform .15s; }
+.switch[aria-checked="true"] { background: var(--ok); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); }
+.led { width: 14px; height: 14px; border-radius: 50%; background: var(--line); border: 1px solid var(--muted); flex: none; margin: 0 10px; }
+.led.on { background: var(--accent-fill); border-color: var(--accent); box-shadow: 0 0 8px var(--accent-fill); }
+
+.vars table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12.5px; }
+.vars td { padding: 3px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.vars td:first-child { color: var(--t-sys); white-space: nowrap; width: 1%; }
+.vars td:last-child { word-break: break-word; }
+
+.console { font-family: var(--font-mono); font-size: 12.5px; line-height: 1.5; }
+.console div { padding: 1px 0; border-bottom: 1px dashed var(--line); }
+.console .msg { color: var(--steel); } .console .ok { color: var(--ok); } .console .err { color: var(--err); cursor: pointer; } .console .info { color: var(--warn); }
+.console .hint { color: var(--muted); display: block; padding-left: 2ch; }
+
+@media (max-width: 900px) {
+  .app { height: auto; min-height: 100%; }
+  main.work { grid-template-columns: 1fr; }
+  .right { order: -1; grid-template-rows: 52vh auto; }
+  .dock { min-height: 260px; }
+  .left { border-right: 0; }
+  .editor { min-height: 360px; }
+  .jog, .io { grid-template-columns: 1fr; }
+  .brand span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .switch::after { transition: none; } }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><b>KRL<i>·</i>Lab</b><span>KRL proqramlaşdırma simulyatoru · pulsuz və açıq mənbəli</span></div>
+    <span class="status" id="status" data-s="idle">Hazır</span>
+    <div class="spacer"></div>
+    <div class="views" role="group" aria-label="Kamera">
+      <button class="btn small" data-view="iso">3D</button>
+      <button class="btn small" data-view="front">Ön</button>
+      <button class="btn small" data-view="side">Yan</button>
+      <button class="btn small" data-view="top">Üst</button>
+      <button class="btn small" id="clearPath" title="Çəkilmiş yolları sil">Yolu sil</button>
+    </div>
+  </header>
+
+  <main class="work">
+    <section class="left" aria-label="Proqram">
+      <div class="lessonbar">
+        <select id="lesson" aria-label="Dərs seçin"></select>
+        <button class="btn small" id="resetCode" title="Dərsin ilkin kodunu bərpa et">Kodu bərpa et</button>
+      </div>
+      <details class="lesson" id="lessonBox" open>
+        <summary>Dərs</summary>
+        <div class="lesson-body" id="lessonText"></div>
+      </details>
+      <div class="editor" id="editor">
+        <div class="gutterwrap"><div class="gutter"></div></div>
+        <div class="code">
+          <pre aria-hidden="true"><code></code></pre>
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="KRL kodu"></textarea>
+        </div>
+      </div>
+      <div>
+        <div class="runbar">
+          <button class="btn primary" id="run" title="İşə sal (F5)"><svg viewBox="0 0 16 16"><path d="M4 2l10 6-10 6z" fill="currentColor"/></svg>İşə sal</button>
+          <button class="btn" id="step" title="Bir sətir (F10)"><svg viewBox="0 0 16 16"><path d="M2 2l8 6-8 6zM11 2h3v12h-3z" fill="currentColor"/></svg>Addım</button>
+          <button class="btn" id="pause" title="Pauza"><svg viewBox="0 0 16 16"><path d="M3 2h4v12H3zM9 2h4v12H9z" fill="currentColor"/></svg>Pauza</button>
+          <button class="btn" id="stop" title="Dayandır"><svg viewBox="0 0 16 16"><path d="M3 3h10v10H3z" fill="currentColor"/></svg>Dayandır</button>
+          <label class="ov" for="ovr">OV <input type="range" id="ovr" min="5" max="100" step="5" value="50"><output id="ovrOut">50%</output></label>
+        </div>
+        <div class="errbox" id="errbox" hidden></div>
+      </div>
+    </section>
+
+    <section class="right">
+      <div class="viewport" id="viewport">
+        <div class="hud" id="hud"></div>
+        <div class="legend"><span><i style="background:#8a96a3"></i>PTP</span><span><i style="background:#e0a800"></i>LIN</span><span><i style="background:#2fa37a"></i>CIRC</span></div>
+      </div>
+      <div class="dock">
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true" data-tab="jog">Jog</button>
+          <button role="tab" aria-selected="false" data-tab="io">I/O</button>
+          <button role="tab" aria-selected="false" data-tab="vars">Dəyişənlər</button>
+          <button role="tab" aria-selected="false" data-tab="console">Konsol<span class="count" id="errCount" hidden>!</span></button>
+        </div>
+        <div class="pane" data-pane="jog">
+          <div class="jog">
+            <div class="axes" id="axes"></div>
+            <div class="cart">
+              <label for="jogStep">Addım <select id="jogStep"><option>1</option><option selected>10</option><option>50</option></select> mm</label>
+              <div class="grid" id="cartJog"></div>
+              <div class="teach">
+                <button class="btn small" id="teachPtp" title="Cari ox mövqeyini koda əlavə et">Teach PTP</button>
+                <button class="btn small" id="teachLin" title="Cari XYZ mövqeyini koda əlavə et">Teach LIN</button>
+                <button class="btn small" id="goHome">HOME</button>
+              </div>
+              <div class="note">Proqram işləmədikdə robotu əl ilə hərəkət etdirin. Teach cari nöqtəni kursorun altına yazır.</div>
+            </div>
+          </div>
+        </div>
+        <div class="pane" data-pane="io" hidden>
+          <div class="io">
+            <div><h3>Girişlər $IN</h3><div class="list" id="ins"></div></div>
+            <div><h3>Çıxışlar $OUT</h3><div class="list" id="outs"></div></div>
+          </div>
+        </div>
+        <div class="pane vars" data-pane="vars" hidden><table id="vars"><tbody><tr><td colspan="2" class="note">Proqramı işə salın və ya Addım düyməsini basın: dəyişənlər burada görünəcək.</td></tr></tbody></table></div>
+        <div class="pane console" data-pane="console" hidden id="console"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module" src="src/main.js"></script>
+
+</body>
+</html>
